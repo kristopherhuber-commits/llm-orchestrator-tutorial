@@ -1,0 +1,24 @@
+# OS / editor
+*:Zone.Identifier
+.DS_Store
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.envrc
+
+# Model weights and large artifacts (will reuse later)
+*.gguf
+*.safetensors
+*.bin
+*.pt
+
+# Benchmark outputs and clones (we'll refine in §22)
+results/raw/
+benchmarks/*/
+!benchmarks/.gitkeep
