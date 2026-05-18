@@ -40,7 +40,7 @@
 ## Environment state
 - **WSL distro / version:** Ubuntu 24.04.4 LTS / WSL 2.7.3.0
 - **CUDA version (inside WSL):** 12.5 (default), 12.8 (for llama.cpp builds)
-- **Python version / venv location:** 3.12.3 / ~/.venvs/vllm
+- **Python version / venv location:** 3.12.3 / `<repo>/.venv` (moved from ~/.venvs/vllm in §5; recreated from frozen requirements at `configs/vllm-requirements.frozen.txt`)
 - **llama.cpp commit / build flags:** 769cc93a43b51bf6013986180c73ee60cf24cede / CUDA_ARCH=120, FORCE_CUBLAS=OFF, CUDAToolkit_ROOT=/usr/local/cuda-12.8
 - **Ollama version:** 0.24.0
 - **vLLM version / install method:** 0.21.0 / pip in ~/.venvs/vllm, PyTorch 2.11.0+cu130
@@ -81,4 +81,7 @@
 - `~/llama.cpp/build/bin/llama-cli` — llama.cpp CLI binary
 - `~/llama.cpp/build/bin/llama-server` — llama.cpp OpenAI-compatible server
 - `/etc/systemd/system/ollama.service.d/boot-delay.conf` — 45s boot delay for Ollama on Blackwell
-- `~/.venvs/vllm` — vLLM Python venv
+- `<repo>/.venv` — vLLM Python venv (relocated in §5; activate with `source .venv/bin/activate`)
+- `<repo>/configs/vllm-requirements.frozen.txt` — pinned vLLM 0.21.0 + torch 2.11.0+cu130 + flashinfer 0.6.8 install manifest (Blackwell-verified)
+- `<repo>/models/gguf/` — GGUF model weights for llama.cpp / Ollama (gitignored)
+- `<repo>/models/hf/` — HuggingFace-format model weights (safetensors / AWQ / GPTQ) for vLLM (gitignored)
