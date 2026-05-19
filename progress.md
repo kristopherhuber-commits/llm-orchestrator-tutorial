@@ -1,11 +1,11 @@
 # Tutorial Progress Log
 
-## Status log [x] means setion has been completed 
+## Status log [x] means section has been completed 
 - [x] §1 Conceptual map
 - [x] §2 WSL2 + Blackwell setup
 - [x] §3 Capacity planning
 - [x] §4 Quantization formats
-- [ ] §5 Inference engines
+- [x] §5 Inference engines
 - [ ] §6 Candidate model set
 - [ ] §7 Sampling and structured output
 - [ ] §8 Speculative decoding and prefix caching
@@ -40,48 +40,27 @@
 ## Environment state
 - **WSL distro / version:** Ubuntu 24.04.4 LTS / WSL 2.7.3.0
 - **CUDA version (inside WSL):** 12.5 (default), 12.8 (for llama.cpp builds)
-- **Python version / venv location:** 3.12.3 / `<repo>/.venv` (moved from ~/.venvs/vllm in §5; recreated from frozen requirements at `configs/vllm-requirements.frozen.txt`)
+- **Python version / venv location:** 3.12.3 / `<repo>/.venv`
 - **llama.cpp commit / build flags:** 769cc93a43b51bf6013986180c73ee60cf24cede / CUDA_ARCH=120, FORCE_CUBLAS=OFF, CUDAToolkit_ROOT=/usr/local/cuda-12.8
 - **Ollama version:** 0.24.0
-- **vLLM version / install method:** 0.21.0 / pip in ~/.venvs/vllm, PyTorch 2.11.0+cu130
+- **vLLM version / install method:** 0.21.0 / pip in `.venv`, PyTorch 2.11.0+cu130
 
 ## Models installed
 | Model | Size | Quant | Engine | Context | Notes |
 |-------|------|-------|--------|---------|-------|
-|       |      |       |        |         |       |
-
-## Harnesses installed
-| Harness | Version | Endpoint configured | Notes |
-|---------|---------|---------------------|-------|
-|         |         |                     |       |
+| Qwen2.5-Coder-7B-Instruct | 7B | Q4_K_M GGUF | llama.cpp/Ollama | 32K | 4.7 GB file on disk |
+| Qwen2.5-Coder-7B-Instruct | 7B | AWQ INT4 | vLLM | 16K/32K | 5.0 GB files in local directory |
 
 ## Benchmark results
-| Date | Benchmark | Model | Engine | Harness | Edit format | Sampler | Score | Wall-clock | Cost | Notes |
+| Date | Benchmark | Model | Engine | Harness | Edit format | Sampler | Score / Throughput | Wall-clock | Cost | Notes |
 |------|-----------|-------|--------|---------|-------------|---------|-------|------------|------|-------|
-|      |           |       |        |         |             |         |       |            |      |       |
-
-## Open questions / parked items
-- [ ]
+| 2026-05-18 | llama-bench | Qwen2.5-Coder-7B-Instruct | llama.cpp | n/a | n/a | t=0 | pp512: 15158.14 t/s, tg128: 242.24 t/s | n/a | $0 | Full GPU offload (-ngl 99), FlashAttention enabled |
+| 2026-05-19 | vllm bench | qwen2.5-coder-7b-awq | vLLM | n/a | n/a | default | Total: 1311.40 t/s, Gen: 262.28 t/s | 31.23s | $0 | AWQ quantization, PagedAttention enabled, Max concurrency 8, Throttled arrival (4 RPS) |
+| 2026-05-19 | vllm bench | qwen2.5-coder-7b-awq | vLLM | n/a | n/a | default | Total: 5460.18 t/s, Gen: 1092.04 t/s | 7.50s | $0 | AWQ, Chunked Prefill Enabled, Max concurrency 32, Max sequences 32, Throttled arrival (32 RPS) |
 
 ## Decisions made / lessons learned
-- OODA loop maps directly onto agentic loop; orient+decide collapse into single LLM forward pass
-- ADK (Google Agent Development Kit) is a harness-construction framework, not a harness; not needed for this tutorial
-- TUI = terminal UI; OpenCode uses Bubble Tea-based TUI with vim keybindings
-- User preference: vim as editor, vim keybindings in bash shell
-- CUDA 13.1 reported by nvidia-smi is driver max, not installed toolkit (had 12.5)
-- llama.cpp must build against CUDA 12.8 explicitly; CUDA 13.x crashes MMQ kernel on sm_120
-- vLLM FlashInfer sampler fails capability check on sm_120 without CUDA 12.9; workaround: VLLM_USE_FLASHINFER_SAMPLER=0
-- WSL 2.7.0+ required for loopback TCP to work reliably with mirrored networking mode
-- vLLM startup alias: VLLM_USE_FLASHINFER_SAMPLER=0 vllm serve <model> ...
-- Measured: 1.5B Q4_K_M = 2830 MiB net VRAM (840 MB weights + KV pre-alloc + runtime)
-- Idle VRAM baseline on this system: ~1929 MiB
-- Formula M_weights = N_params × b_param validated against hardware
-
-## Files / configs to remember
-- `~/llama.cpp/build/bin/llama-cli` — llama.cpp CLI binary
-- `~/llama.cpp/build/bin/llama-server` — llama.cpp OpenAI-compatible server
-- `/etc/systemd/system/ollama.service.d/boot-delay.conf` — 45s boot delay for Ollama on Blackwell
-- `<repo>/.venv` — vLLM Python venv (relocated in §5; activate with `source .venv/bin/activate`)
-- `<repo>/configs/vllm-requirements.frozen.txt` — pinned vLLM 0.21.0 + torch 2.11.0+cu130 + flashinfer 0.6.8 install manifest (Blackwell-verified)
-- `<repo>/models/gguf/` — GGUF model weights for llama.cpp / Ollama (gitignored)
-- `<repo>/models/hf/` — HuggingFace-format model weights (safetensors / AWQ / GPTQ) for vLLM (gitignored)
+- OODA loop maps directly onto agentic loop
+- vLLM FlashInfer sampler fails capability check on sm_120 without CUDA 12.9; workaround: `VLLM_USE_FLASHINFER_SAMPLER=0`
+- vLLM requires explicit split of `--model` string alias and `--tokenizer` local path flags when running synthetic file benchmarks against local weights.
+- Client bench tools target legacy `/v1/completions` for random syntax strings; passing `/v1/chat/completions` throws a `400 Bad Request` unless structural array payloads are passed.
+- Chunked prefill decouples large prompt ingestion spikes inside WSL virtual memory tables, expanding parallel gen throughput up to 1092.04 tok/s.
